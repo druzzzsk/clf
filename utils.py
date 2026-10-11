@@ -16,10 +16,18 @@ def load_data(csv_path: str, sequence_column: str):
 
 
 def initialize_model(model_name: str):
-    
+
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-    model = AutoModel.from_pretrained(model_name, trust_remote_code=True).to(device)
+    from transformers import AutoConfig
+    config = AutoConfig.from_pretrained(model_name, trust_remote_code=True)
+    if not hasattr(config, 'pad_token_id') or config.pad_token_id is None:
+        config.pad_token_id = 0
+
+    model = AutoModel.from_pretrained(
+        model_name, config=config, trust_remote_code=True, low_cpu_mem_usage=False
+    ).to(device)
+
     tokenizer = AutoTokenizer.from_pretrained(model_name, trust_remote_code=True)
     model.eval()
     return model, tokenizer, device
